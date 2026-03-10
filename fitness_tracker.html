@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="减脂打卡">
+<meta name="theme-color" content="#0d1117">
+<title>减脂打卡 52天</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  :root{
+    --bg:#0d1117;--card:#141a22;--border:#1e2630;--text:#ffffff;--muted:#6b7280;--sub:#9ca3af;
+    --green:#22c55e;--orange:#f97316;--yellow:#fbbf24;--blue:#3b82f6;--purple:#a855f7;
+    --red:#ef4444;--teal:#14b8a6;
+  }
+  html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif}
+  #app{display:flex;flex-direction:column;height:100vh;height:100dvh;max-width:480px;margin:0 auto}
+  #content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:72px}
+  #content::-webkit-scrollbar{display:none}
+
+  /* Bottom nav */
+  #nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;
+    background:rgba(13,17,23,.95);backdrop-filter:blur(12px);border-top:1px solid var(--border);
+    display:flex;padding:8px 0;padding-bottom:max(8px,env(safe-area-inset-bottom));z-index:100}
+  .nav-btn{flex:1;background:none;border:none;cursor:pointer;display:flex;flex-direction:column;
+    align-items:center;gap:2px;padding:4px 0;color:var(--muted);transition:.2s}
+  .nav-btn.active{color:var(--green)}
+  .nav-btn .icon{font-size:20px;line-height:1}
+  .nav-btn .label{font-size:10px;font-weight:600}
+  .nav-dot{width:4px;height:4px;border-radius:2px;background:var(--green);margin-top:1px;opacity:0;transition:.2s}
+  .nav-btn.active .nav-dot{opacity:1}
+
+  /* Cards */
+  .card{background:var(--card);border-radius:16px;border:1px solid var(--border);overflow:hidden}
+  .section-title{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:1px;text-transform:uppercase;
+    padding:16px 0 6px}
+
+  /* Inputs */
+  .input-row{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--border)}
+  .input-row:last-child{border-bottom:none}
+  .input-emoji{font-size:18px;width:28px;text-align:center;flex-shrink:0}
+  .input-label{font-size:13px;color:var(--sub);flex:1}
+  .input-box{display:flex;align-items:center;gap:5px;background:var(--bg);border-radius:8px;
+    padding:6px 10px;border:1px solid var(--border);transition:border-color .2s}
+  .input-box:focus-within{border-color:rgba(34,197,94,.4)}
+  .input-box input{background:none;border:none;outline:none;color:white;font-size:14px;
+    font-weight:600;font-family:'DM Sans',sans-serif;text-align:right;width:72px}
+  .input-box input[type=text]{text-align:left;width:110px}
+  .input-unit{font-size:11px;color:var(--muted);flex-shrink:0}
+
+  /* Check rows */
+  .check-row{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--border);cursor:pointer;user-select:none}
+  .check-row:last-child{border-bottom:none}
+  .check-box{width:22px;height:22px;border-radius:6px;border:2px solid #2a3340;
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:.2s}
+  .check-box.checked{background:var(--green);border-color:var(--green)}
+  .check-box.blue.checked{background:var(--blue);border-color:var(--blue)}
+  .check-tick{color:black;font-size:13px;font-weight:900;display:none}
+  .check-box.checked .check-tick{display:block}
+
+  /* Buttons */
+  .btn-save{background:var(--green);border:none;border-radius:10px;padding:8px 18px;
+    color:black;font-weight:700;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;
+    transition:opacity .2s}
+  .btn-save:active{opacity:.8}
+
+  /* Gap banner */
+  .gap-banner{margin:10px 20px;padding:13px 16px;border-radius:12px;
+    display:flex;justify-content:space-between;align-items:center;gap:8px}
+
+  /* Stats */
+  .stat-row{display:flex;gap:10px;margin-bottom:12px}
+  .stat-card{background:var(--bg);border-radius:14px;padding:14px 16px;
+    border:1px solid var(--border);flex:1;min-width:0}
+  .stat-label{font-size:11px;color:var(--muted);margin-bottom:4px}
+  .stat-value{font-size:22px;font-weight:800;line-height:1}
+  .stat-unit{font-size:11px;color:var(--muted);margin-left:3px}
+
+  /* Progress bar */
+  .progress-track{background:#1e2630;border-radius:8px;height:10px;overflow:hidden}
+  .progress-fill{height:100%;background:linear-gradient(90deg,var(--green),var(--purple));
+    border-radius:8px;transition:width .6s ease}
+
+  /* Toast */
+  #toast{position:fixed;top:24px;left:50%;transform:translateX(-50%) translateY(-60px);
+    background:var(--green);color:black;padding:8px 22px;border-radius:20px;
+    font-weight:700;font-size:13px;z-index:999;transition:transform .3s ease;
+    box-shadow:0 4px 20px rgba(34,197,94,.4);pointer-events:none}
+  #toast.show{transform:translateX(-50%) translateY(0)}
+
+  /* Accordion */
+  .accordion{margin-bottom:10px}
+  .acc-header{background:var(--card);border-radius:14px;padding:15px 16px;
+    display:flex;justify-content:space-between;align-items:center;cursor:pointer;
+    border:1px solid var(--border);transition:.2s;user-select:none}
+  .acc-header.open{border-radius:14px 14px 0 0;border-bottom:none}
+  .acc-title{font-size:14px;font-weight:700}
+  .acc-arrow{color:var(--muted);font-size:18px;transition:transform .2s}
+  .acc-header.open .acc-arrow{transform:rotate(45deg)}
+  .acc-body{background:var(--card);border-radius:0 0 14px 14px;border:1px solid var(--border);border-top:none;overflow:hidden}
+  .acc-item{padding:11px 16px;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:flex-start}
+  .acc-item:last-child{border-bottom:none}
+  .acc-item-name{font-size:13px;font-weight:600;color:white;flex:1}
+  .acc-item-sub{font-size:11px;color:var(--muted);margin-top:2px}
+  .acc-item-kcal{font-size:12px;font-weight:700;flex-shrink:0;margin-top:1px}
+
+  /* Chart */
+  .bar-chart{display:flex;gap:5px;align-items:flex-end;height:80px;padding:0 4px}
+  .bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px}
+  .bar{width:100%;border-radius:4px;transition:height .4s ease;min-height:4px}
+  .bar-label{font-size:9px;color:var(--muted)}
+
+  /* Weight chart */
+  svg.sparkline{width:100%;display:block}
+
+  /* Page header */
+  .page-header{padding:16px 20px 8px;display:flex;justify-content:space-between;align-items:center}
+  .page-date-sub{font-size:12px;color:var(--muted)}
+  .page-date-main{font-size:20px;font-weight:800}
+  .page-title{font-size:20px;font-weight:800;color:white;padding:20px 20px 12px}
+
+  /* Tab pages */
+  .tab-page{display:none;padding:0}
+  .tab-page.active{display:block}
+  .tab-pad{padding:0 20px 20px}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="content">
+
+    <!-- TAB 0: 每日打卡 -->
+    <div class="tab-page active" id="tab-0">
+      <div class="page-header">
+        <div>
+          <div class="page-date-sub">今日打卡</div>
+          <div class="page-date-main" id="today-label"></div>
+        </div>
+        <button class="btn-save" onclick="saveToday()">保存 ✓</button>
+      </div>
+
+      <div id="gap-banner" class="gap-banner" style="display:none">
+        <span style="font-size:12px;color:var(--muted)">⚡ 今日能量缺口</span>
+        <span id="gap-value" style="font-size:22px;font-weight:900"></span>
+        <span id="gap-status" style="font-size:12px;font-weight:600"></span>
+      </div>
+
+      <div class="tab-pad">
+        <div class="section-title">📊 身体数据</div>
+        <div class="card" style="padding:0 14px">
+          <div class="input-row">
+            <span class="input-emoji">⚖️</span>
+            <span class="input-label">体重</span>
+            <div class="input-box"><input type="number" id="f-weight" placeholder="今日体重" step="0.1"><span class="input-unit">斤</span></div>
+          </div>
+          <div class="input-row">
+            <span class="input-emoji">💧</span>
+            <span class="input-label">饮水量</span>
+            <div class="input-box"><input type="number" id="f-water" placeholder="累计"><span class="input-unit">ml</span></div>
+          </div>
+        </div>
+
+        <div class="section-title">⌚ Apple Watch</div>
+        <div class="card" style="padding:0 14px">
+          <div class="input-row">
+            <span class="input-emoji">🔥</span>
+            <span class="input-label">总消耗</span>
+            <div class="input-box"><input type="number" id="f-awTotal" placeholder="总能量" oninput="updateGap()"><span class="input-unit">kcal</span></div>
+          </div>
+          <div class="input-row">
+            <span class="input-emoji">💪</span>
+            <span class="input-label">活动卡路里</span>
+            <div class="input-box"><input type="number" id="f-awActive" placeholder="红圈数值"><span class="input-unit">kcal</span></div>
+          </div>
+          <div class="input-row">
+            <span class="input-emoji">⏱</span>
+            <span class="input-label">运动时长</span>
+            <div class="input-box"><input type="number" id="f-exMin" placeholder=""><span class="input-unit">分钟</span></div>
+          </div>
+        </div>
+
+        <div class="section-title">🍱 饮食记录</div>
+        <div class="card" style="padding:0 14px">
+          <div class="input-row">
+            <span class="input-emoji">🌅</span>
+            <span class="input-label">早餐 09:00</span>
+            <div class="input-box"><input type="number" id="f-breakfast" placeholder="300~350" oninput="updateGap()"><span class="input-unit">kcal</span></div>
+          </div>
+          <div class="input-row">
+            <span class="input-emoji">☀️</span>
+            <span class="input-label">午餐 12:00</span>
+            <div class="input-box"><input type="number" id="f-lunch" placeholder="500~580" oninput="updateGap()"><span class="input-unit">kcal</span></div>
+          </div>
+          <div class="input-row">
+            <span class="input-emoji">🍎</span>
+            <span class="input-label">下午茶 16:00</span>
+            <div class="input-box"><input type="number" id="f-snack" placeholder="80~120" oninput="updateGap()"><span class="input-unit">kcal</span></div>
+          </div>
+          <div class="input-row">
+            <span class="input-emoji">🌙</span>
+            <span class="input-label">晚餐 19:00</span>
+            <div class="input-box"><input type="number" id="f-dinner" placeholder="350~450" oninput="updateGap()"><span class="input-unit">kcal</span></div>
+          </div>
+          <div class="input-row" style="border-bottom:none">
+            <span class="input-emoji"></span>
+            <span class="input-label" style="color:var(--sub)">今日总摄入</span>
+            <span id="total-intake" style="font-size:15px;font-weight:700;color:var(--yellow)">─ kcal</span>
+          </div>
+        </div>
+
+        <div class="section-title">🏃 运动完成</div>
+        <div class="card" style="padding:0 14px">
+          <div class="check-row" onclick="toggle('f-bike')">
+            <span class="input-emoji">🚴</span>
+            <span class="input-label" id="lbl-f-bike" style="color:var(--sub)">骑共享单车</span>
+            <div class="check-box" id="chk-f-bike"><span class="check-tick">✓</span></div>
+          </div>
+          <div class="check-row" onclick="toggle('f-core')">
+            <span class="input-emoji">🧘</span>
+            <span class="input-label" id="lbl-f-core" style="color:var(--sub)">核心训练（死虫/鸟狗/臀桥）</span>
+            <div class="check-box" id="chk-f-core"><span class="check-tick">✓</span></div>
+          </div>
+          <div class="check-row" onclick="toggle('f-wheel')">
+            <span class="input-emoji">🎯</span>
+            <span class="input-label" id="lbl-f-wheel" style="color:var(--sub)">健腹轮（跪姿手肘）</span>
+            <div class="check-box" id="chk-f-wheel"><span class="check-tick">✓</span></div>
+          </div>
+          <div class="input-row" style="border-bottom:none">
+            <span class="input-emoji">📝</span>
+            <span class="input-label">运动备注</span>
+            <div class="input-box"><input type="text" id="f-exNote" placeholder="如：骑车40分钟"></div>
+          </div>
+        </div>
+
+        <div class="section-title">💧 饮水打卡</div>
+        <div class="card" style="padding:0 14px" id="water-checks"></div>
+
+        <div style="height:20px"></div>
+      </div>
+    </div>
+
+    <!-- TAB 1: 能量 -->
+    <div class="tab-page" id="tab-1">
+      <div class="page-title">⚡ 能量收支</div>
+      <div class="tab-pad">
+        <!-- Today -->
+        <div class="card" style="padding:16px;margin-bottom:14px">
+          <div style="font-size:12px;color:var(--muted);margin-bottom:12px">今日概览</div>
+          <div class="stat-row">
+            <div class="stat-card"><div class="stat-label">总消耗(AW)</div>
+              <div><span class="stat-value" id="e-consume" style="color:var(--orange)">─</span><span class="stat-unit">kcal</span></div></div>
+            <div class="stat-card"><div class="stat-label">总摄入</div>
+              <div><span class="stat-value" id="e-intake" style="color:var(--yellow)">─</span><span class="stat-unit">kcal</span></div></div>
+          </div>
+          <div id="e-gap-card" style="border-radius:12px;padding:13px 16px;display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:13px;color:var(--muted)">今日缺口</span>
+            <span id="e-gap-num" style="font-size:30px;font-weight:900">─</span>
+            <span id="e-gap-unit" style="font-size:12px;color:var(--muted)">kcal</span>
+          </div>
+          <div style="text-align:center;margin-top:10px;font-size:12px;color:var(--muted)">目标区间：400 ~ 600 kcal</div>
+        </div>
+
+        <!-- Week -->
+        <div class="card" style="padding:16px;margin-bottom:14px">
+          <div style="font-size:12px;color:var(--muted);margin-bottom:12px">本周累计（近7天）</div>
+          <div class="stat-row">
+            <div class="stat-card"><div class="stat-label">累计缺口</div>
+              <div><span class="stat-value" id="e-week-gap" style="color:var(--green)">─</span><span class="stat-unit">kcal</span></div></div>
+            <div class="stat-card"><div class="stat-label">预计减重</div>
+              <div><span class="stat-value" id="e-predict" style="color:var(--purple)">─</span><span class="stat-unit">斤</span></div></div>
+          </div>
+          <div class="bar-chart" id="e-chart"></div>
+        </div>
+
+        <!-- AW guide -->
+        <div class="card" style="padding:16px">
+          <div style="font-size:12px;color:var(--muted);margin-bottom:12px">⌚ AW 数据读取位置</div>
+          <div style="border-bottom:1px solid var(--border);padding:10px 0;display:flex;gap:10px">
+            <div style="width:3px;border-radius:2px;background:var(--orange);flex-shrink:0"></div>
+            <div><div style="font-size:13px;font-weight:600;color:var(--orange)">总消耗（最重要）</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:3px">iPhone 健康App → 活动 → 静息+活动能量合计</div></div>
+          </div>
+          <div style="border-bottom:1px solid var(--border);padding:10px 0;display:flex;gap:10px">
+            <div style="width:3px;border-radius:2px;background:var(--red);flex-shrink:0"></div>
+            <div><div style="font-size:13px;font-weight:600;color:var(--red)">活动卡路里</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:3px">手表「健身记录」App → 今日 → 红色火焰圈数值</div></div>
+          </div>
+          <div style="padding:10px 0;display:flex;gap:10px">
+            <div style="width:3px;border-radius:2px;background:var(--green);flex-shrink:0"></div>
+            <div><div style="font-size:13px;font-weight:600;color:var(--green)">运动时间</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:3px">手表「活动」App → 绿色运动环分钟数</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: 体重 -->
+    <div class="tab-page" id="tab-2">
+      <div class="page-title">📉 体重趋势</div>
+      <div id="weight-empty" style="padding:60px 20px;text-align:center;display:none">
+        <div style="font-size:48px;margin-bottom:12px">⚖️</div>
+        <div style="color:var(--muted)">还没有体重记录</div>
+        <div style="font-size:12px;color:var(--border);margin-top:6px">去「打卡」页填写今日体重</div>
+      </div>
+      <div id="weight-content" class="tab-pad">
+        <div class="stat-row" style="margin-bottom:14px">
+          <div class="stat-card"><div class="stat-label">当前体重</div>
+            <div><span class="stat-value" id="w-current" style="color:var(--green)">─</span><span class="stat-unit">斤</span></div></div>
+          <div class="stat-card"><div class="stat-label">已减</div>
+            <div><span class="stat-value" id="w-lost" style="color:var(--purple)">─</span><span class="stat-unit">斤</span></div></div>
+          <div class="stat-card"><div class="stat-label">距目标</div>
+            <div><span class="stat-value" id="w-togo" style="color:var(--blue)">─</span><span class="stat-unit" id="w-togo-unit">斤</span></div></div>
+        </div>
+
+        <div class="card" style="padding:16px;margin-bottom:14px">
+          <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:8px">
+            <span>起始 143斤</span><span>目标 135.5斤</span>
+          </div>
+          <div class="progress-track"><div class="progress-fill" id="w-progress" style="width:0%"></div></div>
+          <div style="text-align:center;margin-top:8px;font-size:13px;color:var(--muted)" id="w-pct">进度 0%</div>
+        </div>
+
+        <div class="card" style="padding:16px;margin-bottom:14px">
+          <div style="font-size:12px;color:var(--muted);margin-bottom:8px">体重折线图</div>
+          <svg class="sparkline" id="w-chart" viewBox="0 0 340 100" height="100"></svg>
+        </div>
+
+        <div class="card" style="padding:0 16px">
+          <div style="font-size:12px;color:var(--muted);padding:12px 0 4px">历史记录</div>
+          <div id="w-history"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: 参考 -->
+    <div class="tab-page" id="tab-3">
+      <div class="page-title">📖 食谱参考</div>
+      <div class="tab-pad" id="ref-content"></div>
+    </div>
+
+    <!-- TAB 4: 提醒设置 -->
+    <div class="tab-page" id="tab-4">
+      <div class="page-title">🔔 iOS 提醒设置</div>
+      <div class="tab-pad">
+
+        <!-- How-to banner -->
+        <div style="background:#1a2535;border-radius:14px;padding:14px 16px;margin-bottom:16px;border:1px solid #2a3a55">
+          <div style="font-size:13px;font-weight:700;color:var(--blue);margin-bottom:8px">⌛ 一次性设置，永久生效</div>
+          <div style="font-size:12px;color:var(--sub);line-height:1.7">
+            打开 <b style="color:white">「快捷指令」App</b> → 底部「自动化」→ 右上角「+」→「个人自动化」→「时间」<br>
+            → 设置时间和重复 → 「下一步」→「添加操作」→ 搜索<b style="color:white">「显示通知」</b><br>
+            → 填入下方文案 → 关闭「运行前询问」→ 完成 ✅
+          </div>
+        </div>
+
+        <!-- Reminder cards -->
+        <div id="reminder-cards"></div>
+
+        <!-- Global settings tip -->
+        <div style="background:#1a1a2e;border-radius:14px;padding:14px 16px;margin-top:4px;border:1px solid #a855f755">
+          <div style="font-size:12px;font-weight:700;color:var(--purple);margin-bottom:8px">💡 设置完成后检查这两项</div>
+          <div style="font-size:12px;color:var(--sub);line-height:1.9">
+            <div>① <b style="color:white">「设置」→「专注模式」</b>：确认勿扰模式不会屏蔽快捷指令通知</div>
+            <div>② <b style="color:white">「设置」→「快捷指令」</b>：开启「允许运行未受信任的快捷指令」</div>
+            <div>③ <b style="color:white">通知权限</b>：设置 → 通知 → 快捷指令 → 开启「允许通知」</div>
+          </div>
+        </div>
+
+        <div style="height:20px"></div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+
+  <!-- Bottom Nav -->
+  <nav id="nav">
+    <button class="nav-btn active" onclick="switchTab(0)">
+      <span class="icon">✅</span><span class="label">打卡</span><div class="nav-dot"></div>
+    </button>
+    <button class="nav-btn" onclick="switchTab(1)">
+      <span class="icon">⚡</span><span class="label">能量</span><div class="nav-dot"></div>
+    </button>
+    <button class="nav-btn" onclick="switchTab(2)">
+      <span class="icon">📉</span><span class="label">体重</span><div class="nav-dot"></div>
+    </button>
+    <button class="nav-btn" onclick="switchTab(3)">
+      <span class="icon">📖</span><span class="label">参考</span><div class="nav-dot"></div>
+    </button>
+    <button class="nav-btn" onclick="switchTab(4)">
+      <span class="icon">🔔</span><span class="label">提醒</span><div class="nav-dot"></div>
+    </button>
+  </nav>
+</div>
+
+<div id="toast">✓ 已保存</div>
+
+<script>
+// ─── Data ────────────────────────────────────────────────────────
+const BMR = 1660;
+const START_W = 143, TARGET_W = 135.5;
+const checks = {
+  'f-bike':false,'f-core':false,'f-wheel':false,
+  'w1':false,'w2':false,'w3':false,'w4':false,'w5':false,'w6':false,'w7':false,'w8':false
+};
+
+function todayKey(){ return new Date().toISOString().slice(0,10); }
+function loadHistory(){ try{return JSON.parse(localStorage.getItem('fitness_h')||'[]')}catch{return[]} }
+function saveHistory(h){ localStorage.setItem('fitness_h', JSON.stringify(h)); }
+function loadToday(){
+  const h = loadHistory(), key = todayKey();
+  return h.find(d=>d.date===key)||{date:key};
+}
+
+// ─── Init ─────────────────────────────────────────────────────────
+function init(){
+  // Date label
+  document.getElementById('today-label').textContent =
+    new Date().toLocaleDateString('zh-CN',{month:'long',day:'numeric',weekday:'short'});
+
+  // Water checks setup
+  const waterLabels = ['08:30 起床温水','09:00 早餐','10:30 上午','11:45 午餐前',
+    '14:00 下午','16:00 下午茶','18:30 晚餐前','21:30 睡前'];
+  const wc = document.getElementById('water-checks');
+  waterLabels.forEach((lb,i)=>{
+    const k='w'+(i+1);
+    wc.innerHTML += `<div class="check-row" onclick="toggle('${k}')">
+      <span class="input-emoji">💧</span>
+      <span class="input-label" id="lbl-${k}" style="color:var(--sub)">${lb}</span>
+      <div class="check-box blue" id="chk-${k}"><span class="check-tick">✓</span></div>
+    </div>`;
+  });
+  wc.innerHTML += `<div class="input-row" style="border-bottom:none;pointer-events:none">
+    <span class="input-emoji"></span>
+    <span class="input-label" style="color:var(--sub)">已打卡</span>
+    <span id="water-count" style="font-size:15px;font-weight:700;color:var(--blue)">0 / 8</span>
+  </div>`;
+
+  // Load today
+  const td = loadToday();
+  const fields = ['weight','water','awTotal','awActive','exMin','breakfast','lunch','snack','dinner','exNote'];
+  fields.forEach(f=>{ const el=document.getElementById('f-'+f); if(el&&td[f]) el.value=td[f]; });
+  Object.keys(checks).forEach(k=>{
+    checks[k] = !!td[k];
+    renderCheck(k);
+  });
+
+  buildRef();
+  buildReminders();
+  updateGap();
+  renderEnergyTab();
+  renderWeightTab();
+}
+
+// ─── Check toggle ─────────────────────────────────────────────────
+function toggle(key){
+  checks[key]=!checks[key];
+  renderCheck(key);
+  updateGap();
+  updateWaterCount();
+}
+function renderCheck(k){
+  const box=document.getElementById('chk-'+k);
+  const lbl=document.getElementById('lbl-'+k);
+  if(!box) return;
+  box.classList.toggle('checked',checks[k]);
+  if(lbl) lbl.style.color = checks[k]?'white':'var(--sub)';
+}
+function updateWaterCount(){
+  const wc = document.getElementById('water-count');
+  if(!wc) return;
+  const cnt = ['w1','w2','w3','w4','w5','w6','w7','w8'].filter(k=>checks[k]).length;
+  wc.textContent = cnt+' / 8';
+}
+
+// ─── Gap calc ─────────────────────────────────────────────────────
+function getIntake(){
+  return ['breakfast','lunch','snack','dinner'].reduce((s,f)=>{
+    const el=document.getElementById('f-'+f); return s+(el?Number(el.value)||0:0);
+  },0);
+}
+function getGapColor(g){
+  if(g>=400&&g<=600) return 'var(--green)';
+  if(g>600) return 'var(--yellow)';
+  if(g>=200) return 'var(--blue)';
+  return 'var(--red)';
+}
+function getGapStatus(g){
+  if(g>=400&&g<=600) return '✅ 完美';
+  if(g>600) return '⚠️ 偏大';
+  if(g>=200) return '📌 偏小';
+  return '❌ 超支';
+}
+
+function updateGap(){
+  const intake = getIntake();
+  const aw = Number(document.getElementById('f-awTotal')?.value)||0;
+  const totalEl = document.getElementById('total-intake');
+  if(totalEl) totalEl.textContent = intake>0 ? intake+' kcal' : '─ kcal';
+
+  const banner = document.getElementById('gap-banner');
+  if(aw>0 && intake>0){
+    const gap = aw - intake;
+    const c = getGapColor(gap);
+    banner.style.display='flex';
+    banner.style.background = c.replace(')',',0.12)').replace('var(','rgba(').replace('--green','34,197,94').replace('--yellow','251,191,36').replace('--blue','59,130,246').replace('--red','239,68,68');
+    banner.style.border = '1px solid '+c.replace(')',',0.3)').replace('var(','rgba(').replace('--green','34,197,94').replace('--yellow','251,191,36').replace('--blue','59,130,246').replace('--red','239,68,68');
+    document.getElementById('gap-value').textContent = gap+' kcal';
+    document.getElementById('gap-value').style.color = c;
+    document.getElementById('gap-status').textContent = getGapStatus(gap);
+    document.getElementById('gap-status').style.color = c;
+  } else {
+    banner.style.display='none';
+  }
+}
+
+// ─── Save ─────────────────────────────────────────────────────────
+function saveToday(){
+  const key = todayKey();
+  const entry = {date:key};
+  ['weight','water','awTotal','awActive','exMin','breakfast','lunch','snack','dinner','exNote'].forEach(f=>{
+    const el=document.getElementById('f-'+f); if(el&&el.value) entry[f]=el.value;
+  });
+  Object.assign(entry, checks);
+  entry.totalIntake = getIntake();
+
+  const h = loadHistory().filter(d=>d.date!==key);
+  h.push(entry);
+  h.sort((a,b)=>a.date.localeCompare(b.date));
+  saveHistory(h);
+
+  // Toast
+  const t=document.getElementById('toast');
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2000);
+
+  renderEnergyTab();
+  renderWeightTab();
+}
+
+// ─── Tab switch ────────────────────────────────────────────────────
+function switchTab(i){
+  document.querySelectorAll('.tab-page').forEach((p,idx)=>p.classList.toggle('active',idx===i));
+  document.querySelectorAll('.nav-btn').forEach((b,idx)=>b.classList.toggle('active',idx===i));
+  if(i===1) renderEnergyTab();
+  if(i===2) renderWeightTab();
+}
+
+// ─── Copy helper ───────────────────────────────────────────────────
+function copyText(btn, text){
+  navigator.clipboard.writeText(text).then(()=>{
+    const orig = btn.textContent;
+    btn.textContent = '✓ 已复制';
+    btn.style.background = 'var(--green)';
+    btn.style.color = 'black';
+    setTimeout(()=>{ btn.textContent=orig; btn.style.background=''; btn.style.color=''; }, 1800);
+  }).catch(()=>{
+    // fallback
+    const ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+    btn.textContent='✓ 已复制'; setTimeout(()=>btn.textContent='复制',1800);
+  });
+}
+
+// ─── Reminder cards ────────────────────────────────────────────────
+const reminders = [
+  {
+    time:'08:30', emoji:'💧', label:'起床喝水', color:'#14b8a6',
+    repeat:'每天', category:'饮水',
+    title:'💧 起床喝水 300ml',
+    body:'温水一杯，唤醒肠胃，开启代谢 🌅',
+    tip:'起床后第一件事，在厨房放一个杯子作为提醒'
+  },
+  {
+    time:'10:30', emoji:'💧', label:'上午补水', color:'#14b8a6',
+    repeat:'每天', category:'饮水',
+    title:'💧 上午补水 300ml',
+    body:'久坐容易忘喝水，站起来喝一杯再坐下 💻',
+    tip:'配合番茄工作法，每个番茄钟结束后站起来喝水'
+  },
+  {
+    time:'14:00', emoji:'💧', label:'下午补水', color:'#14b8a6',
+    repeat:'每天', category:'饮水',
+    title:'💧 下午补水 300ml',
+    body:'午后容易犯困，先喝水再说！不是真饿是渴 🫙',
+    tip:'如果感觉困，先喝水，很可能是轻度脱水'
+  },
+  {
+    time:'16:00', emoji:'🍎', label:'下午茶加餐', color:'#22c55e',
+    repeat:'每天', category:'饮食',
+    title:'🍎 16:00 下午茶时间',
+    body:'吃个苹果/酸奶，别等到晚饭饿过头暴食 💪',
+    tip:'这一餐必须吃！防止19:00晚餐时过饿乱吃'
+  },
+  {
+    time:'18:30', emoji:'💧', label:'晚餐前喝水', color:'#14b8a6',
+    repeat:'每天', category:'饮水',
+    title:'💧 晚餐前喝水 200ml',
+    body:'饭前喝水增加饱腹感，自然少吃主食 🌙',
+    tip:'饭前10~15分钟喝，减少正餐摄入量效果明显'
+  },
+  {
+    time:'19:30', emoji:'🚴', label:'运动提醒', color:'#a855f7',
+    repeat:'每天', category:'运动',
+    title:'🚴 今天运动了吗？',
+    body:'骑车30分钟 or 核心训练15分钟，动起来！消耗200~350kcal 🔥',
+    tip:'饭后30分钟以上再运动，核心训练也可以饭后做'
+  },
+  {
+    time:'21:00', emoji:'⚡', label:'每日总结打卡', color:'#f97316',
+    repeat:'每天', category:'打卡',
+    title:'⚡ 今日总结打卡',
+    body:'打开App填AW总消耗数据，看看今天能量缺口达标了吗？目标400~600kcal 📊',
+    tip:'睡前2分钟填完，明天早上起来看趋势更有动力'
+  },
+  {
+    time:'21:30', emoji:'💧', label:'睡前补水', color:'#14b8a6',
+    repeat:'每天', category:'饮水',
+    title:'💧 睡前小口喝水',
+    body:'今天饮水够2000ml了吗？小口喝200ml，准备睡觉 😴',
+    tip:'不要喝太多，避免夜起影响睡眠质量'
+  },
+];
+
+const catColors = {'饮水':'#14b8a6','饮食':'#22c55e','运动':'#a855f7','打卡':'#f97316'};
+
+function buildReminders(){
+  const container = document.getElementById('reminder-cards');
+  if(!container) return;
+
+  // Group by category
+  const cats = ['饮水','饮食','运动','打卡'];
+  const catLabels = {'饮水':'💧 饮水提醒 × 4条','饮食':'🍽️ 饮食提醒 × 1条','运动':'💪 运动提醒 × 1条','打卡':'📊 打卡提醒 × 1条'};
+
+  let html = '';
+  cats.forEach(cat => {
+    const items = reminders.filter(r => r.category === cat);
+    if(!items.length) return;
+    const cc = catColors[cat];
+    html += `<div style="margin-bottom:20px">
+      <div style="font-size:12px;font-weight:700;color:${cc};letter-spacing:1px;text-transform:uppercase;padding:4px 0 8px">${catLabels[cat]}</div>`;
+    items.forEach((r, ri) => {
+      html += `
+      <div style="background:var(--card);border-radius:14px;border:1px solid ${cc}33;margin-bottom:10px;overflow:hidden">
+        <!-- Header -->
+        <div style="background:${cc}18;padding:12px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid ${cc}22">
+          <div style="width:40px;height:40px;border-radius:10px;background:${cc}22;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">${r.emoji}</div>
+          <div style="flex:1">
+            <div style="font-size:14px;font-weight:700;color:white">${r.label}</div>
+            <div style="font-size:12px;color:${cc};margin-top:1px">⏰ 每天 ${r.time}</div>
+          </div>
+          <div style="background:${cc}33;color:${cc};font-size:10px;font-weight:700;padding:4px 10px;border-radius:20px;white-space:nowrap">${r.category}</div>
+        </div>
+        <!-- Content -->
+        <div style="padding:12px 14px">
+          <!-- Notification title -->
+          <div style="margin-bottom:10px">
+            <div style="font-size:10px;color:var(--muted);margin-bottom:4px;letter-spacing:.5px">通知标题</div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <div style="background:var(--bg);border-radius:8px;padding:8px 12px;flex:1;font-size:12px;font-weight:600;color:white;border:1px solid var(--border)">${r.title}</div>
+              <button onclick="copyText(this,'${r.title.replace(/'/g,"&#39;")}')"
+                style="background:var(--border);border:none;border-radius:8px;padding:7px 12px;color:var(--sub);font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:inherit">复制</button>
+            </div>
+          </div>
+          <!-- Notification body -->
+          <div style="margin-bottom:10px">
+            <div style="font-size:10px;color:var(--muted);margin-bottom:4px;letter-spacing:.5px">通知内容</div>
+            <div style="display:flex;gap:8px;align-items:flex-start">
+              <div style="background:var(--bg);border-radius:8px;padding:8px 12px;flex:1;font-size:12px;color:var(--sub);border:1px solid var(--border);line-height:1.5">${r.body}</div>
+              <button onclick="copyText(this,'${r.body.replace(/'/g,"&#39;").replace(/\n/g,' ')}')"
+                style="background:var(--border);border:none;border-radius:8px;padding:7px 12px;color:var(--sub);font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:inherit;flex-shrink:0">复制</button>
+            </div>
+          </div>
+          <!-- Tip -->
+          <div style="background:#1a2535;border-radius:8px;padding:8px 12px;font-size:11px;color:${cc};border-left:3px solid ${cc}">
+            💡 ${r.tip}
+          </div>
+        </div>
+      </div>`;
+    });
+    html += '</div>';
+  });
+
+  // Step guide
+  html += `
+    <div style="background:#141a22;border-radius:14px;padding:16px;border:1px solid var(--border);margin-bottom:12px">
+      <div style="font-size:13px;font-weight:700;color:white;margin-bottom:12px">📋 快捷指令设置步骤（每条重复一次）</div>
+      ${[
+        ['1','打开「快捷指令」App','iPhone 自带，搜索「快捷指令」找到它'],
+        ['2','点底部「自动化」→ 右上角「+」','进入自动化创建页面'],
+        ['3','选「个人自动化」→「时间」','设定具体时间和重复频率'],
+        ['4','填入时间，重复选「每天」','按上方卡片填入对应时间'],
+        ['5','点「下一步」→「添加操作」','进入操作选择页'],
+        ['6','搜索「显示通知」','选择「显示通知」操作'],
+        ['7','标题和内容填入上方卡片文案','点击标题/内容旁的「复制」按钮'],
+        ['8','关闭「运行前询问」开关','否则每次触发都会弹确认框'],
+        ['9','点「完成」','该条提醒设置完毕，重复设置下一条'],
+      ].map(([n,title,sub])=>`
+        <div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+          <div style="width:24px;height:24px;border-radius:6px;background:var(--green);color:black;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">${n}</div>
+          <div><div style="font-size:12px;font-weight:600;color:white">${title}</div><div style="font-size:11px;color:var(--muted);margin-top:2px">${sub}</div></div>
+        </div>`).join('')}
+    </div>`;
+
+  container.innerHTML = html;
+}
+
+// ─── Energy Tab ────────────────────────────────────────────────────
+function renderEnergyTab(){
+  const h = loadHistory();
+  const td = loadToday();
+  const intake = Number(td.totalIntake)||getIntake();
+  const consume = Number(td.awTotal)||0;
+
+  document.getElementById('e-consume').textContent = consume||'─';
+  document.getElementById('e-intake').textContent = intake||'─';
+
+  const gCard = document.getElementById('e-gap-card');
+  const gNum = document.getElementById('e-gap-num');
+  const gUnit = document.getElementById('e-gap-unit');
+
+  if(consume>0&&intake>0){
+    const gap = consume-intake;
+    const c = getGapColor(gap);
+    gCard.style.background=hexAlpha(c,0.12);
+    gCard.style.border='1px solid '+hexAlpha(c,0.35);
+    gNum.textContent=gap;
+    gNum.style.color=c;
+    gUnit.textContent='kcal';
+  } else {
+    gCard.style.background='var(--bg)';
+    gCard.style.border='1px solid var(--border)';
+    gNum.textContent='─';
+    gNum.style.color='var(--muted)';
+    gUnit.textContent='填写AW数据后显示';
+  }
+
+  // Week bars
+  const recent = h.slice(-7);
+  const chart = document.getElementById('e-chart');
+  chart.innerHTML='';
+  let weekGap=0;
+  if(recent.length===0){
+    chart.innerHTML='<div style="color:var(--muted);font-size:12px;margin:auto">暂无数据，开始打卡吧</div>';
+  } else {
+    recent.forEach(d=>{
+      const g = (Number(d.awTotal)||BMR)-(Number(d.totalIntake)||0);
+      const h2 = Math.max(4,Math.min(76,(g/800)*76));
+      const c = getGapColor(g);
+      const date = d.date.slice(5).replace('-','/');
+      chart.innerHTML+=`<div class="bar-col"><div class="bar" style="height:${h2}px;background:${c}"></div><span class="bar-label">${date}</span></div>`;
+      weekGap+=Math.max(0,g);
+    });
+  }
+  document.getElementById('e-week-gap').textContent = Math.round(weekGap)||'─';
+  document.getElementById('e-predict').textContent = weekGap>0?(weekGap/7700*2).toFixed(1):'─';
+}
+
+function hexAlpha(cssVar,alpha){
+  const map={'var(--green)':'34,197,94','var(--yellow)':'251,191,36','var(--blue)':'59,130,246','var(--red)':'239,68,68'};
+  return `rgba(${map[cssVar]||'100,100,100'},${alpha})`;
+}
+
+// ─── Weight Tab ────────────────────────────────────────────────────
+function renderWeightTab(){
+  const h = loadHistory().filter(d=>d.weight);
+  const empty = document.getElementById('weight-empty');
+  const content = document.getElementById('weight-content');
+  if(h.length===0){ empty.style.display='block';content.style.display='none';return; }
+  empty.style.display='none';content.style.display='block';
+
+  const latest = Number(h[h.length-1].weight);
+  const lost = Math.max(0,START_W-latest);
+  const togo = latest-TARGET_W;
+  const pct = Math.max(0,Math.min(1,(START_W-latest)/(START_W-TARGET_W)));
+
+  document.getElementById('w-current').textContent = latest;
+  document.getElementById('w-lost').textContent = lost.toFixed(1);
+  if(togo>0){
+    document.getElementById('w-togo').textContent=togo.toFixed(1);
+    document.getElementById('w-togo-unit').textContent='斤';
+    document.getElementById('w-togo').style.color='var(--blue)';
+  } else {
+    document.getElementById('w-togo').textContent='达标🎉';
+    document.getElementById('w-togo').style.color='var(--green)';
+    document.getElementById('w-togo-unit').textContent='';
+  }
+  document.getElementById('w-progress').style.width=(pct*100).toFixed(1)+'%';
+  document.getElementById('w-pct').textContent='进度 '+(pct*100).toFixed(0)+'%';
+
+  // Sparkline
+  const W=340,H=100;
+  const ws = h.map(d=>Number(d.weight));
+  const wMin=Math.min(...ws)-0.5, wMax=Math.max(...ws)+0.5;
+  const pts = h.map((d,i)=>{
+    const x = h.length===1?W/2:(i/(h.length-1))*(W-40)+20;
+    const y = H-((Number(d.weight)-wMin)/(wMax-wMin))*(H-24)-8;
+    return x+','+y;
+  }).join(' ');
+  const dots = h.map((d,i)=>{
+    const x = h.length===1?W/2:(i/(h.length-1))*(W-40)+20;
+    const y = H-((Number(d.weight)-wMin)/(wMax-wMin))*(H-24)-8;
+    return `<circle cx="${x}" cy="${y}" r="4" fill="var(--green)" stroke="var(--bg)" stroke-width="2"/>`;
+  }).join('');
+  document.getElementById('w-chart').innerHTML =
+    `<polyline points="${pts}" fill="none" stroke="var(--green)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>${dots}`;
+
+  // History list
+  const hist = document.getElementById('w-history');
+  hist.innerHTML = [...h].reverse().map(d=>`
+    <div style="padding:10px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between">
+      <span style="font-size:13px;color:var(--muted)">${d.date.slice(5).replace('-','/')}</span>
+      <span style="font-size:15px;font-weight:700;color:var(--green)">${d.weight} 斤</span>
+    </div>`).join('');
+}
+
+// ─── Ref Tab ──────────────────────────────────────────────────────
+const refData=[
+  {title:'🥩 牛排食谱',color:'#ef4444',items:[
+    {n:'菲力 100g',k:'~220 kcal',s:'脂肪最少，首选'},
+    {n:'西冷 100g',k:'~270 kcal',s:'性价比高，超市常见'},
+    {n:'眼肉 100g',k:'~300 kcal',s:'偶尔，控制在100g'},
+    {n:'电磁炉煎法',k:'─',s:'1800W，厨纸吸干水，每面90秒~2分钟，不用黄油'},
+    {n:'⚠️ 使用规则',k:'≤3次/周',s:'搭配西兰花/芦笋代替主食'},
+  ]},
+  {title:'🌅 早餐方案',color:'#fbbf24',items:[
+    {n:'方案A：鸡蛋2个+全麦+无糖豆浆',k:'~320 kcal',s:'10分钟，最常用'},
+    {n:'方案B：燕麦粥+水煮蛋',k:'~310 kcal',s:'前夜泡燕麦，最省事'},
+    {n:'方案C：全麦三明治+黑咖啡',k:'~300 kcal',s:'赶时间首选'},
+  ]},
+  {title:'☀️ 食堂午餐',color:'#f97316',items:[
+    {n:'✅ 推荐：清蒸鱼/白切鸡/炒青菜',k:'500~580',s:'米饭打半碗约100g'},
+    {n:'⚠️ 偶尔：红烧豆腐/炒肉片',k:'550~620',s:'少量'},
+    {n:'❌ 避免：红烧肉/炸鸡/糖醋',k:'700+',s:'热量陷阱'},
+  ]},
+  {title:'☕ KPro点餐',color:'#a78bfa',items:[
+    {n:'鸡肉藜麦碗',k:'~490 kcal',s:'换油醋汁，最推荐'},
+    {n:'嫩烤鸡腿饭',k:'~520 kcal',s:'少酱，不加薯条'},
+    {n:'轻食沙拉+鸡肉',k:'~380 kcal',s:'加蛋增加饱腹感'},
+  ]},
+  {title:'🍎 16:00 下午茶',color:'#22c55e',items:[
+    {n:'苹果/橙子/小番茄',k:'80~100 kcal',s:'✅ 首选'},
+    {n:'无糖希腊酸奶100g',k:'~80 kcal',s:'✅ 高蛋白'},
+    {n:'坚果一小把15g',k:'~90 kcal',s:'⚠️ 不超20g'},
+    {n:'黑咖啡/无糖绿茶',k:'<5 kcal',s:'✅ 提神首选'},
+    {n:'❌ 奶茶/饼干/薯片',k:'200~500',s:'完全不值，避免'},
+  ]},
+  {title:'🌙 晚餐方案',color:'#3b82f6',items:[
+    {n:'微波5分钟：鸡胸薄片+蔬菜',k:'~350 kcal',s:'高火4分钟'},
+    {n:'电磁炉：番茄炒蛋+菜心',k:'~420 kcal',s:'少油，配半碗饭'},
+    {n:'牛排+西兰花（不加主食）',k:'~320 kcal',s:'减脂效果最好'},
+  ]},
+  {title:'💧 饮水时间表',color:'#14b8a6',items:[
+    {n:'08:30 起床温水',k:'300ml',s:'唤醒肠胃'},
+    {n:'09:00 早餐',k:'250ml',s:''},
+    {n:'10:30 上午',k:'300ml',s:'设番茄钟提醒'},
+    {n:'11:45 午餐前',k:'200ml',s:'增加饱腹感'},
+    {n:'14:00 下午',k:'300ml',s:''},
+    {n:'16:00 下午茶',k:'250ml',s:''},
+    {n:'18:30 晚餐前',k:'200ml',s:''},
+    {n:'21:30 睡前',k:'200ml',s:'小口，别太多'},
+  ]},
+  {title:'💪 核心训练动作',color:'#a855f7',items:[
+    {n:'🐛 死虫式',k:'3组×10次/侧',s:'仰卧，对侧手脚伸直，腰贴地'},
+    {n:'🐦 鸟狗式',k:'3组×10次/侧',s:'四肢跪，对侧伸直保持3秒，骨盆不转'},
+    {n:'🍑 臀桥',k:'3组×15次',s:'仰卧屈膝，夹臀抬起，顶部停1秒'},
+    {n:'🪵 前臂平板',k:'3组×30~45秒',s:'前臂撑，腕不承重，腰不塌'},
+    {n:'🎯 健腹轮（跪）',k:'3组×8~10次',s:'手肘撑，滚出≤30cm，右腕戴护腕'},
+  ]},
+];
+let openAcc=-1;
+function buildRef(){
+  const c=document.getElementById('ref-content');
+  c.innerHTML=refData.map((s,si)=>`
+    <div class="accordion">
+      <div class="acc-header" id="acc-h-${si}" onclick="toggleAcc(${si})">
+        <span class="acc-title" style="color:${si===openAcc?s.color:'white'}">${s.title}</span>
+        <span class="acc-arrow">+</span>
+      </div>
+      <div class="acc-body" id="acc-b-${si}" style="display:none">
+        ${s.items.map(it=>`<div class="acc-item">
+          <div style="flex:1"><div class="acc-item-name">${it.n}</div>${it.s?`<div class="acc-item-sub">${it.s}</div>`:''}</div>
+          <div class="acc-item-kcal" style="color:${s.color}">${it.k}</div>
+        </div>`).join('')}
+      </div>
+    </div>`).join('');
+}
+function toggleAcc(si){
+  const body=document.getElementById('acc-b-'+si);
+  const head=document.getElementById('acc-h-'+si);
+  const isOpen=body.style.display!=='none';
+  // Close all
+  refData.forEach((_,i)=>{
+    const b=document.getElementById('acc-b-'+i),h=document.getElementById('acc-h-'+i);
+    if(b){b.style.display='none';h.classList.remove('open');h.querySelector('.acc-arrow').textContent='+';}
+  });
+  if(!isOpen){
+    body.style.display='block';
+    head.classList.add('open');
+    head.querySelector('.acc-arrow').textContent='−';
+    head.querySelector('.acc-title').style.color=refData[si].color;
+  }
+}
+
+// ─── Service Worker (PWA offline) ──────────────────────────────────
+if('serviceWorker' in navigator){
+  const sw=`
+    const CACHE='fitness-v1';
+    self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll([location.href]))));
+    self.addEventListener('fetch',e=>e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request))));
+  `;
+  const blob=new Blob([sw],{type:'application/javascript'});
+  navigator.serviceWorker.register(URL.createObjectURL(blob));
+}
+
+init();
+</script>
+</body>
+</html>
